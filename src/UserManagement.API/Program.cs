@@ -31,14 +31,17 @@ if (app.Environment.IsDevelopment())
 
 //app.UseHttpsRedirection();
 
+app.UseHttpsRedirection();
 app.UseAuthorization();
 app.MapControllers();
 
 // Seed
+// Seed the database with starter data
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<UserDbContext>();
     await UserDbContextSeed.SeedAsync(dbContext);
+    await UserDbContextSeed.SeedAsync(dbContext, new PasswordService());
 }
 
 app.Run();
