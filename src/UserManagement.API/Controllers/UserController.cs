@@ -26,7 +26,7 @@ public class UserController : ControllerBase
     }
     
     // GET: api/users/getByName/{username}
-    [HttpGet("getByName/{username}")]
+    [HttpGet("byName/{username}")]
     public async Task<IActionResult> GetByUserName(string username)
     {
         var user = await _userRepository.GetByUserNameAsync(username);
@@ -50,19 +50,17 @@ public class UserController : ControllerBase
     
     // PUT: api/user/{id}
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(Guid id, [FromBody]UpdateUserDto userDto)
+    public async Task<IActionResult> Update(Guid id, [FromBody]UpdateUserDto updateUserDto)
     {
-        /*if (userDto != null)
-        {
-        }*/
-            return Ok();
+        var userDto = await _userRepository.UpdateAsync(id, updateUserDto);
+        return userDto != null ? Ok(userDto) : NotFound();
     }
     
     // DELETE: api/user/{id}
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
-        
-        return NotFound();
+        var result = await _userRepository.DeleteAsync(id);
+        return result ? Ok() : NotFound();
     }
 }

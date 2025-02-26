@@ -2,6 +2,7 @@
 using UserManagement.Application.DTO;
 using UserManagement.Application.Mappers;
 using UserManagement.Application.Repositories;
+using UserManagement.Application.Services;
 using UserManagement.Domain.Entities;
 using UserManagement.Persistence.Data;
 
@@ -11,10 +12,12 @@ namespace UserManagement.Persistence.Repositories
     public class UserRepository : IUserRepository
     {
         private readonly UserDbContext _context;
+        private PasswordService _passwordService;
 
-        public UserRepository(UserDbContext context)
+        public UserRepository(UserDbContext context, PasswordService passwordService)
         {
             _context = context;
+            _passwordService = passwordService;
         }
 
         public async Task<UserDto?> GetByIdAsync(Guid id)
@@ -41,6 +44,9 @@ namespace UserManagement.Persistence.Repositories
         public async Task<UserDto?> AddAsync(AddUserDto addUserDto)
         { 
             var user = addUserDto.ToEntity(); // Map to entity
+            
+            user.SetPassword(_passwordService.HashPassword(addUserDto.Password));
+            
             _context.Users.Add(user); // Add to table
             
             await _context.SaveChangesAsync(); //save
@@ -49,21 +55,37 @@ namespace UserManagement.Persistence.Repositories
             return await GetByIdAsync(user.Id);
         }
 
-        public async Task UpdateAsync(UpdateUserDto updateUserDto)
+        public async Task<UserDto?> UpdateAsync(Guid id, UpdateUserDto updateUserDto)
         {
-            var user = updateUserDto.ToEntity();
+            var user = await _context.Users.FindAsync(id); // Fetch user
+            if (user == null) return null;
+            
+            // Update user fields
+            user.UserName = updateUserDto.UserName;
+            user.FullName = updateUserDto.FullName ?? user.FullName;
+            user.Email = updateUserDto.Email;
+            user.MobileNumber = updateUserDto.MobileNumber ?? user.MobileNumber;
+            user.Language = updateUserDto.Language ?? user.Language;
+            user.Culture = updateUserDto.Culture ?? user.Culture;
+            if(updateUserDto.Password != "")
+                user.SetPassword(_passwordService.HashPassword(updateUserDto.Password));
+            
+            // Save changes
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
+            
+            // Return updated user
+            return await GetByIdAsync(user.Id);
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task<bool> DeleteAsync(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
-            if (user is not null)
-            {
-                _context.Users.Remove(user);
-                await _context.SaveChangesAsync();
-            }
+            if (user is null) return false;
+            
+            _context.Users.Remove(user);
+            await _context.SaveChangesAsync();
+            return true;
         }
     }
 }

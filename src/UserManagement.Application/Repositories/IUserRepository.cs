@@ -9,7 +9,7 @@ namespace UserManagement.Application.Repositories
         Task<UserDto?> GetByUserNameAsync(string userName);
         Task<List<UserDto>> GetAllAsync();
         Task<UserDto?> AddAsync(AddUserDto addUserDto);
-        Task UpdateAsync(UpdateUserDto updateUserDto);
-        Task DeleteAsync(Guid id);
+        Task<UserDto?> UpdateAsync(Guid id, UpdateUserDto updateUserDto);
+        Task<bool> DeleteAsync(Guid id);
     }
 }

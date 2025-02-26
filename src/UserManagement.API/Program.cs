@@ -1,3 +1,4 @@
+using UserManagement.Application.Services;
 using UserManagement.Infrastructure;
 using UserManagement.Persistence;
 using UserManagement.Persistence.Data;
@@ -15,6 +16,9 @@ builder.Services.AddSwaggerGen();
 
 // Register infrastructure dependencies
 builder.Services.AddInfrastructureServices(configuration);
+
+// Register custom services
+builder.Services.AddSingleton<PasswordService>();
 
 var app = builder.Build();
 
