@@ -23,14 +23,14 @@ namespace UserManagement.Persistence.Repositories
         public async Task<UserDto?> GetByIdAsync(Guid id)
         {
             var user = await _context.Users.FindAsync(id);
-            return user.ToDto();
+            return user?.ToDto();
         }
 
 
         public async Task<UserDto?> GetByUserNameAsync(string userName)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == userName);
-            return user.ToDto();
+            return user?.ToDto();
         }
 
         public async Task<List<UserDto>> GetAllAsync()
@@ -44,6 +44,9 @@ namespace UserManagement.Persistence.Repositories
         public async Task<UserDto?> AddAsync(AddUserDto addUserDto)
         { 
             var user = addUserDto.ToEntity(); // Map to entity
+            
+            var doesUserExist = await _context.Users.AnyAsync(u => u.UserName == addUserDto.UserName);
+            if (doesUserExist) return null; // Username taken!
             
             user.SetPassword(_passwordService.HashPassword(addUserDto.Password));
             

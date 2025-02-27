@@ -7,6 +7,8 @@ public static class UserMapper
 {
     public static UserDto ToDto(this User user)
     {
+        if (user == null)
+            throw new ArgumentNullException(nameof(user), "User cannot be null");
         return new UserDto(
             user.Id,
             user.UserName,
@@ -20,6 +22,8 @@ public static class UserMapper
     
     public static User ToDto(this UserDto userDto)
     {
+        if (userDto == null)
+            throw new ArgumentNullException(nameof(userDto), "UserDto cannot be null");
         return new User(
             userDto.UserName,
             userDto.FullName,
@@ -32,6 +36,8 @@ public static class UserMapper
     
     public static User ToEntity(this AddUserDto addUserDto)
     {
+        if (addUserDto == null)
+            throw new ArgumentNullException(nameof(addUserDto), "AddUserDto cannot be null");
         return new User(
             addUserDto.UserName,
             addUserDto.FullName,
@@ -45,6 +51,8 @@ public static class UserMapper
     
     public static User ToEntity(this UpdateUserDto createUserDto)
     {
+        if (createUserDto == null)
+            throw new ArgumentNullException(nameof(createUserDto), "UpdateUserDto cannot be null");
         return new User(
             createUserDto.UserName,
             createUserDto.FullName,
