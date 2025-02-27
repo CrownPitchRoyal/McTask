@@ -9,12 +9,13 @@ public class UserDto
     public string? MobileNumber { get; set; }
     public string? Language { get; set; }
     public string? Culture { get; set; }
-    
+
     public UserDto()
     {
     }
 
-    public UserDto(Guid id, string userName, string? fullName, string email, string? mobileNumber, string? language, string? culture)
+    public UserDto(Guid id, string userName, string? fullName, string email, string? mobileNumber, string? language,
+        string? culture)
     {
         this.Id = id;
         this.UserName = userName;

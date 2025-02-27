@@ -10,11 +10,12 @@ namespace UserManagement.Infrastructure
     public static class ServiceRegistration
     {
         public static void AddInfrastructureServices(this IServiceCollection services, IConfiguration configuration)
-        { 
+        {
             services.AddDbContext<UserDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
 
             services.AddScoped<IUserRepository, UserRepository>();
+            services.AddScoped<IApiKeyRepository, ApiKeyRepository>();
         }
     }
 }

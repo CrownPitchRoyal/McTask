@@ -1,3 +1,4 @@
+using Microsoft.OpenApi.Models;
 using Serilog;
 using Serilog.Extensions;
 using UserManagement.API.Middlewares;
@@ -19,7 +20,7 @@ Log.Logger = new LoggerConfiguration()
     .Enrich.WithClientIp()
     .Enrich.FromLogContext()
     .CreateLogger();
-    
+
 
 // Add Logging
 builder.Logging.ClearProviders();
@@ -28,7 +29,39 @@ builder.Logging.AddSerilog();
 // Add services to the container.
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer(); // Learn configuring Swagger: https://aka.ms/aspnetcore/swashbuckle
-builder.Services.AddSwaggerGen();
+// builder.Services.AddSwaggerGen();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "User Management API", Version = "v1" });
+
+    c.AddSecurityDefinition("ApiKey", new OpenApiSecurityScheme
+    {
+        Description =
+            "API Key needed to access the endpoints. Call Login to acquire, then add it to the request header.",
+        In = ParameterLocation.Header,
+        Name = "ApiKey",
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "ApiKeyScheme"
+    });
+
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "ApiKey"
+                },
+                Scheme = "ApiKeyScheme",
+                Name = "ApiKey",
+                In = ParameterLocation.Header
+            },
+            new List<string>()
+        }
+    });
+});
 
 // Register infrastructure dependencies
 builder.Services.AddInfrastructureServices(configuration);

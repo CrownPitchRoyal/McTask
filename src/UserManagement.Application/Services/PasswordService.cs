@@ -14,7 +14,7 @@ public class PasswordService
     }
 
     // Password verification using BCrypt
-    private static bool VerifyHashedPassword(string hashedPassword, string password)
+    public bool VerifyHashedPassword(string hashedPassword, string password)
     {
         return BCrypt.Net.BCrypt.Verify(password, hashedPassword);
     }

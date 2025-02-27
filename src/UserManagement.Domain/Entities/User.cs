@@ -11,6 +11,10 @@
         public string? Culture { get; set; }
         public string PasswordHash { get; private set; } = string.Empty; // Store hashed password
 
+        // Navigation property | API Keys
+        public ICollection<ApiKey> ApiKeys { get; set; } = new List<ApiKey>();
+
+        // Constructors        
         public User()
         {
         }
