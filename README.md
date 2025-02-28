@@ -40,7 +40,6 @@ The SQL server and DB should be ready to go now.
  - FluidValidation
  - Clean-er Architecture
  - Identity Framework
- - Integration tests
- - Code lists
+ - Code lists for Language and Culture
  - Fixed Integration tests
 
