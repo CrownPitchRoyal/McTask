@@ -15,7 +15,7 @@ public static class TestHttpClientExtensions
     /// <param name="userName">Username for authentication.</param>
     /// <param name="password">Password for authentication.</param>
     /// <returns>The API key as a string.</returns>
-    public static async Task<string> AuthenticateAsnyc(this HttpClient client, string userName, string password)
+    public static async Task<string> AuthenticateAsync(this HttpClient client, string userName, string password)
     {
         // Prep login obj
         var loginDto = new LoginDto
