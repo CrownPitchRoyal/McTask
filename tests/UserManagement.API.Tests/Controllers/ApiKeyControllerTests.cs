@@ -21,18 +21,27 @@ public class ApiKeyControllerTests
     public async Task Login_ReturnsOkResult_WithApiKey()
     {
         // Arrange
-        var loginDto = new LoginDto() { userName = "admin", password = "TestPass1" };
-        var apiKey = Guid.NewGuid(); // Simulate an approximation of a generated API key
-        _apiKeyRepositoryMock.Setup(repo => repo.LoginAsync(loginDto))
-            .ReturnsAsync(new OkObjectResult(apiKey.ToString()));
-        
+        var loginDto = new LoginDto { userName = "admin", password = "TestPass1" };
+        var generatedGuid = Guid.NewGuid();
+        var expectedResult = new ApiKeyLoginDto()
+        {
+            Success = true,
+            StatusCode = 200,
+            ApiKey = new ApiKeyDto { Key = generatedGuid }
+        };
+
+        _apiKeyRepositoryMock
+            .Setup(repo => repo.LoginAsync(loginDto))
+            .ReturnsAsync(expectedResult);
+    
         // Act
         var result = await _apiKeyController.Login(loginDto);
-        
+    
         // Assert
-        var okResult = Assert.IsType<OkObjectResult>(result); // Check result type
-        var returnedApiKey = Assert.IsType<string>(okResult.Value); // Check value type
-        Assert.NotNull(returnedApiKey); // Make sure it's not null
-        Assert.True(Guid.TryParse(returnedApiKey, out _)); // Validate, to make sure it's a valid GUID
+        var okResult = Assert.IsType<OkObjectResult>(result);
+        var returnedApiKeyDto = Assert.IsType<ApiKeyDto>(okResult.Value);
+        Assert.NotEqual(Guid.Empty, returnedApiKeyDto.Key);
+        Assert.Equal(generatedGuid, returnedApiKeyDto.Key);
     }
+
 }

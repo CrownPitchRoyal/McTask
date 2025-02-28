@@ -7,20 +7,39 @@ namespace UserManagement.API.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
-public class ApiKeyController(IApiKeyRepository apiKeyRepository) : ControllerBase
+public class ApiKeyController : ControllerBase
 {
+    private readonly IApiKeyRepository _apiKeyRepository;
+
+    public ApiKeyController(IApiKeyRepository apiKeyRepository)
+    {
+        _apiKeyRepository = apiKeyRepository;
+    }
+
     [HttpPost]
     public async Task<IActionResult> Login(LoginDto loginDto)
     {
-        return await apiKeyRepository.LoginAsync(loginDto);
+        var result = await _apiKeyRepository.LoginAsync(loginDto);
+        if (!result.Success)
+        {
+            // Return a 401 Unauthorized with the error message.
+            return Unauthorized(new { result.StatusCode, result.Message });
+        }
+        return Ok(result.ApiKey);
     }
 
-    // We pass headers so the api key can be extracted and searched for in the db
     [ApiKey]
     [HttpDelete]
     public async Task<IActionResult> Logout()
     {
-        var result = await apiKeyRepository.LogoutAsync(this.HttpContext.Request.Headers);
-        return result ? Ok() : NotFound();
+        // Extract the API key from the request headers.
+        if (!Request.Headers.TryGetValue("apikey", out var apiKeyValues))
+        {
+            return NotFound();
+        }
+
+        var apiKey = apiKeyValues.First();
+        var logoutResult = await _apiKeyRepository.LogoutAsync(apiKey);
+        return logoutResult ? Ok() : NotFound();
     }
 }

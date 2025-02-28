@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using UserManagement.Application.DTO.ApiKey;
 using UserManagement.Application.Mappers;
 using UserManagement.Application.Repositories;
@@ -10,29 +8,43 @@ using UserManagement.Persistence.Data;
 
 namespace UserManagement.Persistence.Repositories;
 
-public class ApiKeyRepository(PasswordService passwordService, UserDbContext context) : IApiKeyRepository
+public class ApiKeyRepository : IApiKeyRepository
 {
-    // Check if password matches the password that is set to the user
-    public async Task<IActionResult> LoginAsync(LoginDto loginDto)
+    private readonly PasswordService _passwordService;
+    private readonly UserDbContext _context;
+
+    public ApiKeyRepository(PasswordService passwordService, UserDbContext context)
     {
-        // Find User
-        var user = await context.Users.FirstOrDefaultAsync(u => u.UserName == loginDto.userName);
+        _passwordService = passwordService;
+        _context = context;
+    }
+
+    public async Task<ApiKeyLoginDto> LoginAsync(LoginDto loginDto)
+    {
+        // Find the user
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.UserName == loginDto.userName);
         if (user is null)
-            return new UnauthorizedObjectResult(new
-            {
-                StatusCode = 401,
-                Message = "User not found."
-            });
+        {
+            return new ApiKeyLoginDto 
+            { 
+                Success = false, 
+                StatusCode = 401, 
+                Message = "User not found." 
+            };
+        }
 
-        // Compare password to hash-ed one
-        if (!passwordService.VerifyHashedPassword(user.PasswordHash, loginDto.password))
-            return new UnauthorizedObjectResult(new
-            {
-                StatusCode = 401,
-                Message = "Password is incorrect."
-            });
+        // Compare the provided password with the stored hashed password
+        if (!_passwordService.VerifyHashedPassword(user.PasswordHash, loginDto.password))
+        {
+            return new ApiKeyLoginDto 
+            { 
+                Success = false, 
+                StatusCode = 401, 
+                Message = "Password is incorrect." 
+            };
+        }
 
-        // Create new Api key entry
+        // Create a new API key entry
         var newApiKey = new ApiKey
         {
             Key = Guid.NewGuid(),
@@ -40,50 +52,50 @@ public class ApiKeyRepository(PasswordService passwordService, UserDbContext con
             DateCreated = DateTime.UtcNow
         };
 
-        // Add and save
-        await context.ApiKeys.AddAsync(newApiKey);
-        await context.SaveChangesAsync();
+        await _context.ApiKeys.AddAsync(newApiKey);
+        await _context.SaveChangesAsync();
 
-        // Fetch newly created Api key
-        var apiKey = await context.ApiKeys.FirstOrDefaultAsync(a => a.Id == newApiKey.Id);
+        // Fetch the newly created API key and map to DTO
+        var apiKey = await _context.ApiKeys.FirstOrDefaultAsync(a => a.Id == newApiKey.Id);
 
-        return new OkObjectResult(apiKey?.ToDto());
+        return new ApiKeyLoginDto 
+        { 
+            Success = true, 
+            StatusCode = 200, 
+            ApiKey = apiKey?.ToDto() 
+        };
     }
 
-    public async Task<bool> LogoutAsync(IHeaderDictionary httpHeaders)
+    public async Task<bool> LogoutAsync(string apiKeyString)
     {
-        // Fetch the api key from the headers
-        httpHeaders.TryGetValue("apikey", out var foundApiKey);
-        var apiKey = foundApiKey.First();
+        if (string.IsNullOrWhiteSpace(apiKeyString))
+            return false;
 
-        if (apiKey is null) return false;
+        if (!Guid.TryParse(apiKeyString, out Guid parsedApiKey))
+            return false;
 
-        // Parse the Api key
-        var parsedApiKey = Guid.Parse(apiKey);
+        // Try to find the API key entry
+        var apiKeyEntity = await _context.ApiKeys.FirstOrDefaultAsync(a => a.Key == parsedApiKey);
+        if (apiKeyEntity == null)
+            return false;
 
-        // Try and find api key to remove
-        var apiKeyEntity = await context.ApiKeys.FirstOrDefaultAsync(a => a.Key == parsedApiKey);
-        if (apiKeyEntity == null) return false;
+        _context.ApiKeys.Remove(apiKeyEntity);
+        await _context.SaveChangesAsync();
 
-        // Save 
-        context.ApiKeys.Remove(apiKeyEntity);
-        await context.SaveChangesAsync();
-
-        // Remove potential left-over expired Api keys
+        // Remove potential expired API keys
         await CleanUpExpiredTokens();
-
         return true;
     }
 
-    // This should be a job.
+    // This method removes API keys older than 10 minutes.
     private async Task<bool> CleanUpExpiredTokens()
     {
-        // Fetch all Api keys with expiration date overdue
-        var apiKeys = await context.ApiKeys.Where(a => DateTime.UtcNow > a.DateCreated.AddMinutes(10)).ToListAsync();
+        var expiredApiKeys = await _context.ApiKeys
+            .Where(a => DateTime.UtcNow > a.DateCreated.AddMinutes(10))
+            .ToListAsync();
 
-        // Batch remove them and save changes
-        context.ApiKeys.RemoveRange(apiKeys);
-        await context.SaveChangesAsync();
+        _context.ApiKeys.RemoveRange(expiredApiKeys);
+        await _context.SaveChangesAsync();
         return true;
     }
 }
