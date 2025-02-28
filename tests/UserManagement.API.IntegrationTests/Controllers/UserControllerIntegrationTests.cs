@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.VisualStudio.TestPlatform.TestHost;
 using UserManagement.Application.DTO;
 using UserManagement.API.IntegrationTests.Helpers;
+using UserManagement.Application.DTO.ApiKey;
 
 namespace UserManagement.API.IntegrationTests.Controllers;
 
@@ -205,14 +206,14 @@ public class UserControllerIntegrationTests : IClassFixture<WebApplicationFactor
         var createdUser = await postResponse.Content.ReadFromJsonAsync<UserDto>();
 
         // Act - Retrieve the same user by id
-        var getResponse = await _client.GetAsync($"{ApiPath}/{createdUser?.Id}");
+        var getResponse = await _client.GetAsync($"{ApiPath}/{createdUser!.Id}");
         getResponse.EnsureSuccessStatusCode();
         var retrievedUser = await getResponse.Content.ReadFromJsonAsync<UserDto>();
 
         // Assert
         Assert.NotNull(retrievedUser);
-        Assert.NotNull(retrievedUser.Id);
-        Assert.Equal(createdUser.UserName, retrievedUser.UserName);
+        Assert.NotEqual(Guid.Empty, retrievedUser.Id);
+        Assert.Equal(createdUser!.UserName, retrievedUser.UserName);
         Assert.Equal(createdUser.FullName, retrievedUser.FullName);
         Assert.Equal(createdUser.Email, retrievedUser.Email);
         Assert.Equal(createdUser.MobileNumber, retrievedUser.MobileNumber);
