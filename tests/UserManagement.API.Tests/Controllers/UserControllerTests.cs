@@ -4,7 +4,7 @@ using UserManagement.API.Controllers;
 using UserManagement.Application.DTO;
 using UserManagement.Application.Repositories;
 
-namespace UserManagement.API.Tests;
+namespace UserManagement.API.Tests.Controllers;
 
 public class UserControllerTests
 {
